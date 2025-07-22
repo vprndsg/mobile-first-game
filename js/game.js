@@ -11,6 +11,12 @@ function resize() {
 window.addEventListener("resize", resize, {passive:true});
 resize();
 
+/* Load images */
+const playerImg = new Image();
+playerImg.src = "assets/player.png";
+const obstacleImg = new Image();
+obstacleImg.src = "assets/obstacle.png";
+
 /* ---- Game state ---- */
 let player = {x:50, y:canvas.height/2, size:30, vy:0};
 let obstacles = [];
@@ -81,13 +87,21 @@ function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   // player
-  ctx.fillStyle="#4af";
-  ctx.beginPath(); ctx.arc(player.x,player.y,player.size,0,Math.PI*2); ctx.fill();
+  if (playerImg.complete) {
+    ctx.drawImage(playerImg, player.x - player.size, player.y - player.size, player.size*2, player.size*2);
+  } else {
+    ctx.fillStyle="#4af";
+    ctx.beginPath(); ctx.arc(player.x,player.y,player.size,0,Math.PI*2); ctx.fill();
+  }
 
   // obstacles
-  ctx.fillStyle="#fa4";
   obstacles.forEach(o=>{
-    ctx.beginPath(); ctx.arc(o.x,o.y,o.size,0,Math.PI*2); ctx.fill();
+    if (obstacleImg.complete) {
+      ctx.drawImage(obstacleImg, o.x - o.size, o.y - o.size, o.size * 2, o.size * 2);
+    } else {
+      ctx.fillStyle="#fa4";
+      ctx.beginPath(); ctx.arc(o.x,o.y,o.size,0,Math.PI*2); ctx.fill();
+    }
   });
 }
 function reset(){
