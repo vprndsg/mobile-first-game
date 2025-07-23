@@ -58,24 +58,35 @@ body {
 }
 
 /* Style individual decision card buttons */
+/*
+  Decision cards are styled to resemble playing cards.  A gradient background,
+  subtle border and drop shadow help them stand out from the cyberpunk bar
+  backdrop.  Cards gently lift on hover to invite interaction.
+*/
 .decision-card {
-  flex: 1 1 calc(50% - 1rem);
-  background: rgba(34, 34, 34, 0.8);
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 0.5rem;
+  /* three cards per row on larger screens; will wrap on narrow viewports */
+  flex: 1 1 calc(33.33% - 1rem);
+  background: linear-gradient(180deg, rgba(34, 34, 34, 0.85), rgba(12, 12, 12, 0.85));
+  border: 2px solid #8efeff;
+  border-radius: 8px;
+  padding: 0.8rem;
   color: #f5f5f5;
   cursor: pointer;
   text-align: center;
-  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s, border-color 0.2s;
 }
 
+/* lift and brighten the card when hovered */
 .decision-card:hover {
-  background: #333;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+  border-color: #a0ffff;
 }
 
+/* reset translation when actively clicked */
 .decision-card:active {
-  transform: scale(0.98);
+  transform: translateY(0);
 }
 
 /* Controls container for inspect/quit buttons */
@@ -187,6 +198,15 @@ body {
   }
   #dialogue-box {
     font-size: 0.9rem;
+  }
+
+  /* on very narrow screens, stack decision cards vertically for readability */
+  #decision-cards {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .decision-card {
+    flex: 1 1 100%;
   }
 }
 
