@@ -1,111 +1,98 @@
-/* Simple endless-runner style demo with swipe controls        */
-/* Uses pointer events (works for touch AND mouse)             */
+const scenes = [
+  {
+    background: 'assets/bar_interiror_with_bartender.png',
+    character: 'assets/bartender.png',
+    name: 'Lexi',
+    text: "Welcome to Neon Haven. I'm Lexi, your bartender. What can I get you?",
+    action: 'talk',
+    choices: [
+      { text: 'A holographic martini', next: 1 },
+      { text: 'A solar punch', next: 2 }
+    ]
+  },
+  {
+    background: 'assets/bar_interiror_with_bartender.png',
+    character: 'assets/bartender.png',
+    name: 'Lexi',
+    text: 'Coming right up! Let me mix that holographic martini for you.',
+    action: 'mix',
+    next: 3
+  },
+  {
+    background: 'assets/bar_interiror_with_bartender.png',
+    character: 'assets/bartender.png',
+    name: 'Lexi',
+    text: 'Ah, a solar punch! It\'s one of our best. Let me whip that up.',
+    action: 'mix',
+    next: 3
+  },
+  {
+    background: 'assets/bar_interiror_with_bartender.png',
+    character: 'assets/bartender.png',
+    name: 'Lexi',
+    text: 'Here you go! Enjoy your drink. Feel free to chat with our patrons.',
+    action: 'talk',
+    next: 4
+  },
+  {
+    background: 'assets/bar_interiror_with_bartender.png',
+    character: 'assets/patron.png',
+    name: 'Mystery Patron',
+    text: 'Hey there, first time here? The neon nights are crazy!',
+    action: 'talk',
+    next: null
+  }
+];
 
-const canvas = /** @type {HTMLCanvasElement} */(document.getElementById("gameCanvas"));
-const ctx     = canvas.getContext("2d");
+let index = 0;
 
-function resize() {
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resize, {passive:true});
-resize();
+const backgroundEl = document.getElementById('background');
+const characterEl = document.getElementById('character');
+const nameEl = document.getElementById('name');
+const textEl = document.getElementById('text');
+const choicesEl = document.getElementById('choices');
 
-/* Load images */
-const playerImg = new Image();
-playerImg.src = "assets/player.png";
-const obstacleImg = new Image();
-obstacleImg.src = "assets/obstacle.png";
-
-/* ---- Game state ---- */
-let player = {x:50, y:canvas.height/2, size:30, vy:0};
-let obstacles = [];
-let lastTime=0;
-
-/* ---- Touch / Mouse controls ---- */
-let startX=0, startY=0, swiping=false;
-canvas.addEventListener("pointerdown", e=>{
-  startX=e.clientX; startY=e.clientY; swiping=true;
-});
-canvas.addEventListener("pointerup", e=>{
-  if(!swiping) return;
-  const dx=e.clientX-startX, dy=e.clientY-startY;
-  if(Math.abs(dx) > Math.abs(dy)){       // horizontal swipe
-      if(dx>30) move("right"); else if(dx<-30) move("left");
+function showScene(i) {
+  const scene = scenes[i];
+  if (!scene) return;
+  index = i;
+  backgroundEl.src = scene.background;
+  characterEl.src = scene.character;
+  nameEl.textContent = scene.name;
+  textEl.textContent = scene.text;
+  // Reset animation classes
+  characterEl.classList.remove('talking', 'mixing');
+  if (scene.action === 'talk') {
+    characterEl.classList.add('talking');
+  } else if (scene.action === 'mix') {
+    characterEl.classList.add('mixing');
+  }
+  // Clear choices
+  choicesEl.innerHTML = '';
+  if (scene.choices && scene.choices.length > 0) {
+    scene.choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.textContent = choice.text;
+      btn.className = 'choice-btn';
+      btn.addEventListener('click', () => {
+        showScene(choice.next);
+      });
+      choicesEl.appendChild(btn);
+    });
   } else {
-      if(dy>30) move("down"); else if(dy<-30) move("up");
-  }
-  swiping=false;
-});
-document.querySelectorAll("#buttons button").forEach(btn=>{
-  btn.onclick=()=>move(btn.dataset.dir);
-});
-function move(dir){
-  const speed=60;
-  if(dir==="up")   player.vy=-speed;
-  if(dir==="down") player.vy= speed;
-}
-
-/* ---- Main loop ---- */
-function loop(ts){
-  const dt=(ts-lastTime)/1000;
-  lastTime=ts;
-
-  update(dt);
-  draw();
-
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
-
-function update(dt){
-  /* gravity-ish decay so swipe is impulse-like */
-  player.y += player.vy*dt;
-  player.vy *= 0.9;
-
-  // stay on screen
-  if(player.y<player.size) {player.y=player.size; player.vy=0;}
-  if(player.y>canvas.height-player.size){player.y=canvas.height-player.size; player.vy=0;}
-
-  // spawn and move obstacles
-  if(Math.random() < 1*dt){
-    const size=30+Math.random()*20;
-    obstacles.push({x:canvas.width+size, y:Math.random()*(canvas.height-size*2)+size,
-                    size});
-  }
-  obstacles.forEach(o=>o.x-=200*dt);
-  obstacles = obstacles.filter(o=>o.x+o.size>0);
-
-  // collision
-  obstacles.forEach(o=>{
-    if(Math.hypot(player.x-o.x, player.y-o.y) < player.size+o.size){
-      reset();
+    // If there is a next index, show a Next button
+    if (scene.next !== undefined && scene.next !== null) {
+      const btn = document.createElement('button');
+      btn.textContent = 'Next';
+      btn.className = 'choice-btn';
+      btn.addEventListener('click', () => {
+        showScene(scene.next);
+      });
+      choicesEl.appendChild(btn);
     }
-  });
-}
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // player
-  if (playerImg.complete) {
-    ctx.drawImage(playerImg, player.x - player.size, player.y - player.size, player.size*2, player.size*2);
-  } else {
-    ctx.fillStyle="#4af";
-    ctx.beginPath(); ctx.arc(player.x,player.y,player.size,0,Math.PI*2); ctx.fill();
   }
+}
 
-  // obstacles
-  obstacles.forEach(o=>{
-    if (obstacleImg.complete) {
-      ctx.drawImage(obstacleImg, o.x - o.size, o.y - o.size, o.size * 2, o.size * 2);
-    } else {
-      ctx.fillStyle="#fa4";
-      ctx.beginPath(); ctx.arc(o.x,o.y,o.size,0,Math.PI*2); ctx.fill();
-    }
-  });
-}
-function reset(){
-  player.y  = canvas.height/2;
-  player.vy = 0;
-  obstacles = [];
-}
+document.addEventListener('DOMContentLoaded', () => {
+  showScene(0);
+});
