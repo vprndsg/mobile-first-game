@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width,initial-scale=1,maximum-scale=1">
-  <title>Swipe Quest</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Haven – Visual Novel</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-
-  <!-- On-screen controls for users without gestures (optional) -->
-  <div id="buttons" class="hide-on-touch">
-    <button data-dir="up">▲</button>
-    <button data-dir="left">◀</button>
-    <button data-dir="down">▼</button>
-    <button data-dir="right">▶</button>
+  <div id="game-container">
+    <img id="background" src="assets/bar_interiror_with_bartender.png" alt="Background">
+    <div id="character-container">
+      <img id="character" src="assets/bartender.png" alt="Character">
+    </div>
+    <div id="dialogue-box">
+      <div id="name"></div>
+      <div id="text"></div>
+      <div id="choices"></div>
+    </div>
   </div>
-
   <script type="module" src="js/game.js"></script>
 </body>
 </html>
