@@ -1,233 +1,424 @@
-// Scenes definition for Neon Haven visual novel.
+// Hand of the Demiurge – Biker Bar edition
 //
-// The scenes array drives the flow of the visual novel.  Each scene
-// specifies a background image, the speaking character's name and text, a
-// list of character objects (including their frame sequences and actions),
-// and either a list of choices or the index of the next scene.  To
-// improve visual coherence the backgrounds now reference an empty bar
-// illustration (`cyberpunk_bar_empty.png`) instead of the original
-// bartender backdrop.  Character frames have been updated to use
-// consistent waist‑up portraits (`lexi_*` and `patron_*` files) and
-// additional metadata is leveraged by the renderer to highlight the
-// currently speaking character and dim listeners.
+// This script implements a simplified version of the card‑based gameplay
+// described for the "Hand of the Demiurge" prototype.  The setting is
+// restricted to a neon biker bar; all events occur within this single
+// location.  The Demiurge draws sabotage cards each turn, while the
+// player chooses from a set of decision cards.  Some of these cards
+// disguise fundamental illusion effects which can cost or regain turns.
 
-const scenes = [
-  {
-    background: 'assets/cyberpunk_bar_empty.png',
-    name: 'Lexi',
-    text: "Welcome to Neon Haven. I'm Lexi, your bartender. What can I get you?",
-    characters: [
-      {
-        name: 'Lexi',
-        // cycle between talk and subtle mixing frames for a livelier speaking animation
-        frames: ['assets/lexi_talk1.png', 'assets/lexi_mix2.png'],
-        action: 'talk',
-      },
-      {
-        name: 'Patron',
-        frames: ['assets/patron_talk1.png', 'assets/patron_talk2.png'],
-        action: 'listen',
-      },
-    ],
-    choices: [
-      { text: 'A holographic martini', next: 1 },
-      { text: 'A solar punch', next: 2 },
-    ],
-  },
-  {
-    background: 'assets/cyberpunk_bar_empty.png',
-    name: 'Lexi',
-    text: 'Coming right up! Let me mix that holographic martini for you.',
-    characters: [
-      {
-        name: 'Lexi',
-        // use multiple frames during mixing to avoid static pose
-        frames: ['assets/lexi_mix2.png', 'assets/lexi_talk1.png'],
-        action: 'mix',
-      },
-      {
-        name: 'Patron',
-        frames: ['assets/patron_talk1.png', 'assets/patron_talk2.png'],
-        action: 'listen',
-      },
-    ],
-    next: 3,
-  },
-  {
-    background: 'assets/cyberpunk_bar_empty.png',
-    name: 'Lexi',
-    text: "Ah, a solar punch! It's one of our best. Let me whip that up.",
-    characters: [
-      {
-        name: 'Lexi',
-        frames: ['assets/lexi_mix2.png', 'assets/lexi_talk1.png'],
-        action: 'mix',
-      },
-      {
-        name: 'Patron',
-        frames: ['assets/patron_talk1.png', 'assets/patron_talk2.png'],
-        action: 'listen',
-      },
-    ],
-    next: 3,
-  },
-  {
-    background: 'assets/cyberpunk_bar_empty.png',
-    name: 'Lexi',
-    text: 'Here you go! Enjoy your drink. Feel free to chat with our patrons.',
-    characters: [
-      {
-        name: 'Lexi',
-        // again cycle talk frames for Lexi
-        frames: ['assets/lexi_talk1.png', 'assets/lexi_mix2.png'],
-        action: 'talk',
-      },
-      {
-        name: 'Patron',
-        frames: ['assets/patron_excited.png', 'assets/patron_talk1.png'],
-        action: 'listen',
-      },
-    ],
-    next: 4,
-  },
-  {
-    background: 'assets/cyberpunk_bar_empty.png',
-    name: 'Mystery Patron',
-    text: 'Hey there, first time here? The neon nights are crazy!',
-    characters: [
-      {
-        name: 'Lexi',
-        // Lexi quietly reacts while listening; alternate between laughing and neutral
-        frames: ['assets/lexi_laughing.png', 'assets/lexi_talk1.png'],
-        action: 'listen',
-      },
-      {
-        name: 'Mystery Patron',
-        frames: ['assets/patron_excited.png', 'assets/patron_talk2.png'],
-        action: 'talk',
-      },
-    ],
-    next: null,
-  },
+// ---------------------------------------------------------------------
+// 1. DATA DEFINITIONS
+// ---------------------------------------------------------------------
+
+// Cards that can appear as disguised illusion options.  Illusion cards
+// merely tax the player's time if they fall for them; detecting an
+// illusion grants bonus turns.  These phrases are flavourful but carry
+// no mechanical effect beyond turn adjustments.
+const FUNDAMENTAL_ILLUSIONS = [
+  'Hall of Mirrors',
+  'Flickering Vision',
+  'Phantom Motorcycle',
+  'Empty Glass',
+  'False Door',
+  'Vanishing Jukebox',
+  'Echoing Laughs',
+  'Ghostly Bartender'
 ];
 
-// Maintain current scene index and per‑character frame intervals
-let index = 0;
-let frameIntervals = [];
+// Real decision cards are the meaningful actions the player can take
+// within the biker bar.  The list avoids leaving the location and
+// focuses on interactions and exploration inside the bar.
+const REAL_DECISION_CARDS = [
+  'Order a Drink',
+  'Chat with a Biker',
+  'Inspect the Jukebox',
+  'Play a Game of Pool',
+  'Check the Bulletin Board',
+  'Search Behind the Bar',
+  'Take a Short Rest',
+  'Check Inventory',
+  'Start a Bar Brawl'
+];
 
-// Cache DOM elements for efficiency
-const backgroundEl = document.getElementById('background');
-const characterContainerEl = document.getElementById('character-container');
-const nameEl = document.getElementById('name');
-const textEl = document.getElementById('text');
-const choicesEl = document.getElementById('choices');
+// The Demiurge's sabotage deck.  Each turn the Demiurge draws one
+// card and its effect may harm the player directly or modify the mix
+// of illusion cards dealt for that turn.  Cards like Barrier or Heal
+// are narratively described but carry no mechanical effect here.
+const DEMIURGE_DECK = [
+  'Summon Illusion',
+  'Distort Reality',
+  'Attack Player',
+  'Barrier',
+  'Heal',
+  'Temporal Loop'
+];
 
-/**
- * Clears any running frame animation intervals. Should be called before
- * showing a new scene.
- */
-function clearFrameIntervals() {
-  frameIntervals.forEach((id) => clearInterval(id));
-  frameIntervals = [];
-}
+// Sample dialogues that bikers in the bar might utter.  When the
+// player chooses to chat with a biker, one of these lines is
+// displayed at random to convey atmosphere and hints.  Because we
+// avoid LLM calls, these are prewritten.
+const BIKER_DIALOGUES = [
+  'You hear the roar of engines even when the bikes are silent.',
+  'This bar’s seen more fights than you’ve had hot dinners.',
+  'Watch your drink; sometimes the glasses bite back.',
+  'Never trust a smiling biker.',
+  'The jukebox only plays if you kick it just right.',
+  'Ain’t no law around here but the one you make.'
+];
 
-/**
- * Sanitises a character name into a valid CSS class name.  Spaces are
- * replaced with hyphens and the string is converted to lowercase.
- * @param {string} name
- * @returns {string}
- */
-function classNameFromName(name) {
-  return name.toLowerCase().replace(/\s+/g, '-');
-}
+// ---------------------------------------------------------------------
+// 2. ENTITY CLASSES
+// ---------------------------------------------------------------------
 
-/**
- * Shows the specified scene index, updating background, characters,
- * dialogue and choices.
- * @param {number} i - Index of the scene to display.
- */
-function showScene(i) {
-  const scene = scenes[i];
-  if (!scene) return;
-  index = i;
-
-  // update background
-  backgroundEl.src = scene.background;
-
-  // clear previous animations and characters
-  clearFrameIntervals();
-  characterContainerEl.innerHTML = '';
-
-  // render each character in the scene
-  if (scene.characters && scene.characters.length > 0) {
-    scene.characters.forEach((char) => {
-      const img = document.createElement('img');
-      img.src = char.frames[0];
-      img.alt = char.name;
-
-      // apply animation classes based on action
-      if (char.action === 'talk') {
-        img.classList.add('talking');
-      } else if (char.action === 'mix') {
-        img.classList.add('mixing');
-      }
-
-      // apply type class (e.g. patron) to allow tone adjustments
-      const lower = char.name.toLowerCase();
-      if (lower.includes('patron')) {
-        img.classList.add('patron');
-      }
-
-      // highlight currently speaking character
-      if (char.name === scene.name) {
-        img.classList.add('speaking');
-      } else {
-        img.classList.add('dimmed');
-      }
-
-      // cycle through frames if multiple frames are provided
-      if (char.frames.length > 1) {
-        let frameIndex = 0;
-        const interval = setInterval(() => {
-          frameIndex = (frameIndex + 1) % char.frames.length;
-          img.src = char.frames[frameIndex];
-        }, 500);
-        frameIntervals.push(interval);
-      }
-
-      characterContainerEl.appendChild(img);
-    });
+// Simple player class tracking hit points, turns and inventory.  The
+// player’s attack and defence stats are fixed for this prototype.
+class Player {
+  constructor() {
+    this.hp = 100;
+    this.turns = 60;
+    this.inventory = ['Short Sword', 'Torch'];
+    this.baseAttack = 5;
+    this.baseDefense = 2;
   }
 
-  // update dialogue speaker and text
-  nameEl.textContent = scene.name;
-  textEl.textContent = scene.text;
+  isAlive() {
+    return this.hp > 0 && this.turns > 0;
+  }
 
-  // clear any existing choices
-  choicesEl.innerHTML = '';
-  if (scene.choices && scene.choices.length > 0) {
-    scene.choices.forEach((choice) => {
-      const btn = document.createElement('button');
-      btn.textContent = choice.text;
-      btn.className = 'choice-btn';
-      btn.addEventListener('click', () => {
-        showScene(choice.next);
-      });
-      choicesEl.appendChild(btn);
-    });
-  } else if (scene.next !== undefined && scene.next !== null) {
-    // if there is a next scene index, show a Next button
+  heal(amount) {
+    this.hp = Math.min(100, this.hp + amount);
+  }
+}
+
+// The Demiurge draws cards from its deck each turn.  When the deck is
+// exhausted, it is reshuffled.  Some cards have immediate effects.
+class Demiurge {
+  constructor() {
+    this.deck = [...DEMIURGE_DECK];
+    this.shuffle();
+  }
+
+  shuffle() {
+    for (let i = this.deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+    }
+  }
+
+  drawCard() {
+    if (this.deck.length === 0) {
+      this.deck = [...DEMIURGE_DECK];
+      this.shuffle();
+    }
+    return this.deck.pop();
+  }
+}
+
+// ---------------------------------------------------------------------
+// 3. GAME STATE AND DOM REFERENCES
+// ---------------------------------------------------------------------
+
+const player = new Player();
+const demiurge = new Demiurge();
+
+// Keep track of the last demiurge card to influence illusion count.
+let lastDemiurgeCard = null;
+// The current decision cards presented to the player this turn.
+let currentCards = [];
+
+// DOM elements
+const hpEl = document.getElementById('hp');
+const turnsEl = document.getElementById('turns');
+const inventoryEl = document.getElementById('inventory');
+const decisionCardsEl = document.getElementById('decision-cards');
+const logEl = document.getElementById('log');
+const inspectBtn = document.getElementById('inspect-btn');
+const quitBtn = document.getElementById('quit-btn');
+
+// ---------------------------------------------------------------------
+// 4. UTILITY FUNCTIONS
+// ---------------------------------------------------------------------
+
+// Update the on‑screen stats for HP, turns and inventory.
+function updateStats() {
+  hpEl.textContent = `HP: ${player.hp}`;
+  turnsEl.textContent = `Turns: ${player.turns}`;
+  inventoryEl.textContent = `Inventory: ${player.inventory.join(', ')}`;
+}
+
+// Append a message to the narrative log.  Older messages scroll
+// upwards as new ones appear at the bottom.
+function logMessage(message) {
+  const para = document.createElement('p');
+  para.textContent = message;
+  logEl.appendChild(para);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// Simple damage computation used for the Demiurge’s attack.
+function computeDamage(att, def) {
+  const base = att - def;
+  const roll = Math.floor(Math.random() * 3); // 0–2
+  return Math.max(1, base + roll);
+}
+
+// Check whether the current game state meets a losing condition.  If
+// the player has no turns left or HP drops to zero, a message is
+// displayed and the game is halted by disabling the card buttons.
+function checkGameOver() {
+  if (player.turns <= 0) {
+    logMessage('Your time has run out! The Demiurge wins.');
+    disableCards();
+    return true;
+  }
+  if (player.hp <= 0) {
+    logMessage('You collapse from your wounds. Game Over.');
+    disableCards();
+    return true;
+  }
+  return false;
+}
+
+// Remove all decision card buttons from the interface.
+function clearCards() {
+  decisionCardsEl.innerHTML = '';
+}
+
+// Disable all decision card buttons so the player cannot take
+// additional actions after game over.
+function disableCards() {
+  const buttons = decisionCardsEl.querySelectorAll('button');
+  buttons.forEach((btn) => {
+    btn.disabled = true;
+  });
+  inspectBtn.disabled = true;
+  quitBtn.disabled = true;
+}
+
+// ---------------------------------------------------------------------
+// 5. DEMIURGE TURN & DECISION CARD GENERATION
+// ---------------------------------------------------------------------
+
+// Execute the Demiurge’s turn: draw a sabotage card and apply its
+// immediate effect.  Effects include damaging the player or simply
+// flavourful descriptions.
+function demiurgeTurn() {
+  const card = demiurge.drawCard();
+  lastDemiurgeCard = card;
+  logMessage(`[Demiurge draws: ${card}]`);
+
+  switch (card) {
+    case 'Attack Player': {
+      const damage = computeDamage(7, player.baseDefense);
+      player.hp -= damage;
+      logMessage(`Shadows lash at you for ${damage} damage!`);
+      break;
+    }
+    case 'Barrier':
+      logMessage('A shimmering barrier appears around the bar, humming ominously.');
+      break;
+    case 'Heal':
+      logMessage('The Demiurge siphons energy from the crowd, growing stronger.');
+      break;
+    case 'Temporal Loop':
+      logMessage('Time stutters – reality flickers like a faulty neon sign.');
+      break;
+    case 'Summon Illusion':
+      logMessage('The air shimmers; trickery lurks among your choices.');
+      break;
+    case 'Distort Reality':
+      logMessage('Your vision swims, colours bleed. Something is off.');
+      break;
+  }
+}
+
+// Create a new set of seven decision cards based on the Demiurge’s
+// last drawn card.  Five cards are real actions and two (or three if
+// an illusion card was played) are disguised illusion cards.  The
+// order is randomised.
+function generateDecisionCards() {
+  const realCount = 5;
+  let illusionCount = 2;
+  if (lastDemiurgeCard === 'Summon Illusion') {
+    illusionCount = 3;
+  }
+  const reals = shuffleArray([...REAL_DECISION_CARDS]).slice(0, realCount);
+  const illus = shuffleArray([...FUNDAMENTAL_ILLUSIONS]).slice(0, illusionCount)
+    .map((text) => `[ILLUSION?] ${text}`);
+  const cards = [...reals, ...illus];
+  return shuffleArray(cards);
+}
+
+// Fisher–Yates shuffle helper
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Render the decision cards as clickable buttons.  Each button
+// represents one card and triggers a handler when clicked.  If the
+// game is over, cards are disabled.
+function renderDecisionCards(cards) {
+  clearCards();
+  currentCards = cards;
+  cards.forEach((card, index) => {
     const btn = document.createElement('button');
-    btn.textContent = 'Next';
-    btn.className = 'choice-btn';
-    btn.addEventListener('click', () => {
-      showScene(scene.next);
-    });
-    choicesEl.appendChild(btn);
-  }
+    btn.textContent = card;
+    btn.className = 'decision-card';
+    btn.addEventListener('click', () => handleCardSelection(index));
+    decisionCardsEl.appendChild(btn);
+  });
 }
 
-// Initialize the first scene once DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  showScene(0);
-});
+// ---------------------------------------------------------------------
+// 6. PLAYER ACTION HANDLING
+// ---------------------------------------------------------------------
+
+// Attempt to detect disguised illusion cards.  Success chance is 70%.
+function inspectIllusions() {
+  if (player.turns <= 0) return;
+  if (!currentCards.some((c) => c.startsWith('[ILLUSION?]'))) {
+    logMessage('You sense nothing amiss this round.');
+    return;
+  }
+  const success = Math.random() < 0.7;
+  if (success) {
+    player.turns += 5;
+    logMessage('You uncover the Demiurge’s trickery! (+5 turns)');
+    // Reveal illusion cards by removing the marker
+    currentCards = currentCards.map((c) => {
+      if (c.startsWith('[ILLUSION?]')) {
+        return c.replace('[ILLUSION?] ', '(Revealed Illusion) ');
+      }
+      return c;
+    });
+    // Re-render to update labels
+    renderDecisionCards(currentCards);
+  } else {
+    logMessage('Your instincts fail you; the mirages persist.');
+    player.turns -= 1;
+  }
+  updateStats();
+  checkGameOver();
+}
+
+// Handle the player selecting a specific card.  Applies the card’s
+// effect, updates stats and advances the game.  Illusions subtract
+// turns if not detected; real cards perform actions defined below.
+function handleCardSelection(index) {
+  if (!player.isAlive()) return;
+  const card = currentCards[index];
+  logMessage(`You choose: ${card}`);
+  // If the card is an illusion
+  if (card.startsWith('[ILLUSION?]')) {
+    const success = Math.random() < 0.3; // 30% chance to recognise
+    if (success) {
+      player.turns += 5;
+      logMessage('You see through the illusion just in time! (+5 turns)');
+    } else {
+      player.turns -= 5;
+      logMessage('You stumble into a trap set by the Demiurge. (-5 turns)');
+    }
+    player.turns -= 1; // selecting consumes a turn regardless
+    updateStats();
+    if (checkGameOver()) return;
+    startTurn();
+    return;
+  }
+
+  // Handle real actions
+  switch (card) {
+    case 'Order a Drink':
+      player.heal(10);
+      logMessage('Lexi pours you a strong drink. You feel reinvigorated. (+10 HP)');
+      break;
+    case 'Chat with a Biker': {
+      const line = BIKER_DIALOGUES[Math.floor(Math.random() * BIKER_DIALOGUES.length)];
+      logMessage(`Biker: “${line}”`);
+      break;
+    }
+    case 'Inspect the Jukebox':
+      logMessage('You tap the jukebox; it crackles and plays a throbbing synth‑rock tune.');
+      break;
+    case 'Play a Game of Pool':
+      logMessage('You challenge a biker to pool. You win a couple rounds and some respect.');
+      player.turns += 1;
+      break;
+    case 'Check the Bulletin Board':
+      logMessage('The bulletin board is cluttered with hand‑scrawled notes: “Lost helmet,” “Band needs drummer.”');
+      break;
+    case 'Search Behind the Bar': {
+      const found = Math.random() < 0.5;
+      if (found) {
+        const item = Math.random() < 0.5 ? 'Health Potion' : 'Lockpick';
+        player.inventory.push(item);
+        logMessage(`You rummage behind the bar and find a ${item}!`);
+      } else {
+        logMessage('You search behind the bar but find nothing of interest.');
+      }
+      break;
+    }
+    case 'Take a Short Rest':
+      player.heal(5);
+      player.turns += 2;
+      logMessage('You lean back and catch your breath. (+5 HP, +2 turns)');
+      break;
+    case 'Check Inventory':
+      logMessage(`You check your belongings: ${player.inventory.join(', ')}`);
+      break;
+    case 'Start a Bar Brawl':
+      player.hp -= 10;
+      logMessage('Fists fly and chairs break. You emerge victorious but bruised. (-10 HP)');
+      break;
+    default:
+      logMessage('You hesitate, doing nothing of note.');
+  }
+  // Action consumes one turn
+  player.turns -= 1;
+  updateStats();
+  if (checkGameOver()) return;
+  startTurn();
+}
+
+// ---------------------------------------------------------------------
+// 7. GAME FLOW FUNCTIONS
+// ---------------------------------------------------------------------
+
+// Start the next turn: Demiurge draws a card, then decision cards are
+// generated and rendered.  Stats are updated at the beginning of
+// each turn.
+function startTurn() {
+  updateStats();
+  if (checkGameOver()) return;
+  demiurgeTurn();
+  updateStats();
+  const cards = generateDecisionCards();
+  renderDecisionCards(cards);
+}
+
+// Begin the game by presenting a world intro and initial hand.  This
+// function also attaches event listeners for the inspect and quit
+// buttons.
+function startGame() {
+  // Clear any existing log
+  logEl.innerHTML = '';
+  // Intro narrative
+  logMessage('Welcome to the Neon Biker Bar, where synthwave hums and engines purr.');
+  logMessage('Your goal: survive 60 turns and unravel the Demiurge’s tricks.');
+  updateStats();
+  // Attach controls
+  inspectBtn.addEventListener('click', inspectIllusions);
+  quitBtn.addEventListener('click', () => {
+    logMessage('You decide you’ve had enough and leave the bar. Game Over.');
+    disableCards();
+  });
+  // Start first turn
+  startTurn();
+}
+
+// Automatically start the game when the DOM is ready
+document.addEventListener('DOMContentLoaded', startGame);
