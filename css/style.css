@@ -30,6 +30,98 @@ body {
   overflow: hidden;
 }
 
+/* Stats bar at the top of the game showing HP, turns and inventory */
+#stats {
+  position: absolute;
+  top: 2%;
+  left: 5%;
+  right: 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #8efeff;
+  font-size: 1rem;
+  z-index: 3;
+}
+
+/* Container for decision cards; cards will wrap to multiple rows on small screens */
+#decision-cards {
+  position: absolute;
+  bottom: 25%;
+  left: 5%;
+  right: 5%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  z-index: 3;
+}
+
+/* Style individual decision card buttons */
+.decision-card {
+  flex: 1 1 calc(50% - 1rem);
+  background: rgba(34, 34, 34, 0.8);
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.5rem;
+  color: #f5f5f5;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.decision-card:hover {
+  background: #333;
+}
+
+.decision-card:active {
+  transform: scale(0.98);
+}
+
+/* Controls container for inspect/quit buttons */
+#controls {
+  position: absolute;
+  bottom: 15%;
+  left: 5%;
+  right: 5%;
+  display: flex;
+  justify-content: space-between;
+  z-index: 3;
+}
+
+#controls button {
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  color: #f5f5f5;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+#controls button:hover {
+  background: #333;
+}
+
+#controls button:active {
+  transform: scale(0.98);
+}
+
+/* Narrative log area at the bottom of the screen */
+#log {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 12rem;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.6);
+  color: #f5f5f5;
+  font-size: 0.9rem;
+  z-index: 3;
+}
+
 /* Background image covers entire area */
 #background {
   position: absolute;
@@ -61,6 +153,13 @@ body {
   object-fit: contain;
   object-position: bottom;
   transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+
+  /* Ensure each character image sits on its own layer. Without explicit positioning
+     the browser may stack successive images atop one another in some browsers,
+     leading to a ghosted duplicate effect. Making the images relative and
+     assigning a z‑index prevents unintended overlap. */
+  position: relative;
+  z-index: 1;
 }
 
 /* Dialogue box styling */
