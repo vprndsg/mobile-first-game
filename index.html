@@ -15,26 +15,38 @@
     `assets/cyberpunk_bar_empty.png`.  Additional styling and behaviour are
     defined in `css/style.css` and `js/game.js` respectively.
   -->
-  <title>Neon Haven – Visual Novel</title>
+  <title>Hand of the Demiurge – Biker Bar</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="game-container">
     <!--
-      Background image: the empty neon bar provides a neutral stage for
-      characters.  Using a transparent PNG allows characters to appear on top
-      without interfering with the scene.
+      Background image: the empty neon bar provides a neutral stage for the
+      biker‑bar themed Hand of the Demiurge.  The translucent PNG allows
+      overlay content without interfering with the scene.
     -->
     <img id="background" src="assets/cyberpunk_bar_empty.png" alt="Background" />
-    <!-- Container for character images; actual images will be injected by game.js -->
-    <div id="character-container"></div>
-    <!-- Dialogue UI: name, text and interactive choices -->
-    <div id="dialogue-box">
-      <div id="name"></div>
-      <div id="text"></div>
-      <div id="choices"></div>
+
+    <!-- Stats bar showing the player's current HP, remaining turns and inventory. -->
+    <div id="stats">
+      <span id="hp">HP: 100</span>
+      <span id="turns">Turns: 60</span>
+      <span id="inventory">Inventory: </span>
     </div>
+
+    <!-- Decision cards will be rendered here as buttons each turn -->
+    <div id="decision-cards" class="cards-container"></div>
+
+    <!-- Control buttons for inspecting illusory cards or quitting the game -->
+    <div id="controls">
+      <button id="inspect-btn">Inspect Illusions</button>
+      <button id="quit-btn">Quit Game</button>
+    </div>
+
+    <!-- Log area for narrative output and Demiurge interactions -->
+    <div id="log"></div>
   </div>
+
   <script type="module" src="js/game.js"></script>
 </body>
 </html>
