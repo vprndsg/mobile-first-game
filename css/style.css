@@ -31,11 +31,11 @@ html, body {
 
 #character-container {
   position: absolute;
-  bottom: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  max-width: 400px;
+  bottom: 5%;
+  right: 5%;
+  transform: none;
+  width: 40%;
+  max-width: 350px;
   z-index: 2;
 }
 
@@ -50,8 +50,20 @@ html, body {
   left: 0;
   width: 100%;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
   z-index: 3;
+}
+
+/* responsive adjustments for small screens */
+@media (max-width: 600px) {
+  #character-container {
+    width: 60%;
+    right: 10%;
+  }
+  #dialogue-box {
+    font-size: 0.9rem;
+  }
 }
 
 #name {
@@ -102,8 +114,8 @@ html, body {
 }
 
 @keyframes pulse {
-  0%, 100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.05); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 .mixing {
@@ -111,9 +123,9 @@ html, body {
 }
 
 @keyframes shake {
-  0% { transform: translateX(-50%) rotate(0deg); }
-  25% { transform: translateX(-50%) rotate(3deg); }
-  50% { transform: translateX(-50%) rotate(0deg); }
-  75% { transform: translateX(-50%) rotate(-3deg); }
-  100% { transform: translateX(-50%) rotate(0deg); }
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-3deg); }
+  100% { transform: rotate(0deg); }
 }
