@@ -3,14 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!--
+    Neon Haven – Visual Novel
+
+    This HTML file serves as the entry point for the Neon Haven visual novel.  It
+    defines the basic layout for the game including a container for the
+    background, character sprites and the dialogue UI.  The previous version
+    loaded a busy bar background with a giant Lexi portrait baked in.  To
+    declutter the scene and leave room for dynamic character layering we now
+    reference an empty cyberpunk bar image (generated separately) via
+    `assets/cyberpunk_bar_empty.png`.  Additional styling and behaviour are
+    defined in `css/style.css` and `js/game.js` respectively.
+  -->
   <title>Neon Haven – Visual Novel</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="game-container">
-    <img id="background" src="assets/bar_interiror_with_bartender.png" alt="Background">
+    <!--
+      Background image: the empty neon bar provides a neutral stage for
+      characters.  Using a transparent PNG allows characters to appear on top
+      without interfering with the scene.
+    -->
+    <img id="background" src="assets/cyberpunk_bar_empty.png" alt="Background" />
     <!-- Container for character images; actual images will be injected by game.js -->
     <div id="character-container"></div>
+    <!-- Dialogue UI: name, text and interactive choices -->
     <div id="dialogue-box">
       <div id="name"></div>
       <div id="text"></div>
