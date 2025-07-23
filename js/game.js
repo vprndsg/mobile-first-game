@@ -1,7 +1,7 @@
 const scenes = [
   {
     background: 'assets/bar_interiror_with_bartender.png',
-    character: 'assets/bartender.png',
+    frames: ['assets/bartender_talking1.png', 'assets/bartender_talking2.png'],
     name: 'Lexi',
     text: "Welcome to Neon Haven. I'm Lexi, your bartender. What can I get you?",
     action: 'talk',
@@ -12,7 +12,7 @@ const scenes = [
   },
   {
     background: 'assets/bar_interiror_with_bartender.png',
-    character: 'assets/bartender.png',
+    frames: ['assets/bartender_mixing.png'],
     name: 'Lexi',
     text: 'Coming right up! Let me mix that holographic martini for you.',
     action: 'mix',
@@ -20,7 +20,7 @@ const scenes = [
   },
   {
     background: 'assets/bar_interiror_with_bartender.png',
-    character: 'assets/bartender.png',
+    frames: ['assets/bartender_mixing.png'],
     name: 'Lexi',
     text: 'Ah, a solar punch! It\'s one of our best. Let me whip that up.',
     action: 'mix',
@@ -28,7 +28,7 @@ const scenes = [
   },
   {
     background: 'assets/bar_interiror_with_bartender.png',
-    character: 'assets/bartender.png',
+    frames: ['assets/bartender_talking1.png', 'assets/bartender_talking2.png'],
     name: 'Lexi',
     text: 'Here you go! Enjoy your drink. Feel free to chat with our patrons.',
     action: 'talk',
@@ -36,7 +36,7 @@ const scenes = [
   },
   {
     background: 'assets/bar_interiror_with_bartender.png',
-    character: 'assets/patron.png',
+    frames: ['assets/patron.png'],
     name: 'Mystery Patron',
     text: 'Hey there, first time here? The neon nights are crazy!',
     action: 'talk',
@@ -45,6 +45,7 @@ const scenes = [
 ];
 
 let index = 0;
+let frameInterval = null;
 
 const backgroundEl = document.getElementById('background');
 const characterEl = document.getElementById('character');
@@ -52,12 +53,35 @@ const nameEl = document.getElementById('name');
 const textEl = document.getElementById('text');
 const choicesEl = document.getElementById('choices');
 
+function startFrameAnimation(frames) {
+  // clear any existing interval
+  if (frameInterval) {
+    clearInterval(frameInterval);
+    frameInterval = null;
+  }
+  let frameIndex = 0;
+  // assign first frame
+  characterEl.src = frames[0];
+  // if multiple frames, cycle through them
+  if (frames.length > 1) {
+    frameInterval = setInterval(() => {
+      frameIndex = (frameIndex + 1) % frames.length;
+      characterEl.src = frames[frameIndex];
+    }, 500);
+  }
+}
+
 function showScene(i) {
   const scene = scenes[i];
   if (!scene) return;
   index = i;
   backgroundEl.src = scene.background;
-  characterEl.src = scene.character;
+  // start animation for frames
+  if (scene.frames) {
+    startFrameAnimation(scene.frames);
+  } else {
+    characterEl.src = '';
+  }
   nameEl.textContent = scene.name;
   textEl.textContent = scene.text;
   // Reset animation classes
