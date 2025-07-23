@@ -1,0 +1,190 @@
+/*
+  Base styling for Neon Haven.  A modern dark UI sets the mood for our
+  cyberpunk bar while responsive sizing allows the layout to adapt from
+  widescreen monitors to mobile phones.  Character images are anchored to
+  a common baseline so they appear grounded on the same plane.  Additional
+  classes control emphasis: the speaking character enlarges slightly and
+  brightens, whilst listeners are dimmed to draw the player's focus.
+*/
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #0a0a0a;
+  color: #f5f5f5;
+}
+
+/* Game container fills the viewport */
+#game-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Background image covers entire area */
+#background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* Character container holds multiple character images side by side */
+#character-container {
+  position: absolute;
+  bottom: 8%;
+  left: 5%;
+  right: 5%;
+  display: flex;
+  align-items: flex-end; /* ensure characters share a ground plane */
+  justify-content: flex-start;
+  gap: 1rem;
+  z-index: 2;
+}
+
+/* Each character image scales down to fit within container and anchors to bottom */
+#character-container img {
+  max-width: 35%;
+  height: auto;
+  object-fit: contain;
+  object-position: bottom;
+  transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+}
+
+/* Dialogue box styling */
+#dialogue-box {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 8px;
+  z-index: 3;
+  backdrop-filter: blur(4px);
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 600px) {
+  #character-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  #character-container img {
+    max-width: 60%;
+  }
+  #dialogue-box {
+    font-size: 0.9rem;
+  }
+}
+
+/* Name and text styling */
+#name {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  color: #8efeff;
+}
+
+#text {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+/* Choice container and buttons */
+#choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.choice-btn {
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  color: #f5f5f5;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.choice-btn:hover {
+  background: #333;
+}
+
+.choice-btn:active {
+  transform: scale(0.98);
+}
+
+/* Utility class to hide elements */
+.hidden {
+  display: none;
+}
+
+/* Animations for talking and mixing */
+.talking {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.mixing {
+  animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(3deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Speaker focus logic: enlarge and brighten active speaker */
+#character-container img.speaking {
+  transform: scale(1.15);
+  filter: brightness(1.2) contrast(1.05);
+}
+
+/* Dim non-speaking characters */
+#character-container img.dimmed {
+  opacity: 0.6;
+  filter: grayscale(20%);
+}
+
+/* Patron filter: unify tone relative to Lexi */
+#character-container img.patron {
+  filter: hue-rotate(-10deg) saturate(0.9) brightness(0.95);
+}
