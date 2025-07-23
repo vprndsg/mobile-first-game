@@ -1,11 +1,20 @@
-/* Global resets and typography */
+/*
+  Base styling for Neon Haven.  A modern dark UI sets the mood for our
+  cyberpunk bar while responsive sizing allows the layout to adapt from
+  widescreen monitors to mobile phones.  Character images are anchored to
+  a common baseline so they appear grounded on the same plane.  Additional
+  classes control emphasis: the speaking character enlarges slightly and
+  brightens, whilst listeners are dimmed to draw the player's focus.
+*/
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   width: 100%;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -39,16 +48,19 @@ html, body {
   left: 5%;
   right: 5%;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-end; /* ensure characters share a ground plane */
   justify-content: flex-start;
   gap: 1rem;
   z-index: 2;
 }
 
-/* Each character image scales down to fit within container */
+/* Each character image scales down to fit within container and anchors to bottom */
 #character-container img {
-  max-width: 40%;
+  max-width: 35%;
   height: auto;
+  object-fit: contain;
+  object-position: bottom;
+  transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
 }
 
 /* Dialogue box styling */
@@ -58,9 +70,10 @@ html, body {
   left: 0;
   width: 100%;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
   border-radius: 8px;
   z-index: 3;
+  backdrop-filter: blur(4px);
 }
 
 /* Responsive adjustments for small screens */
@@ -128,8 +141,13 @@ html, body {
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .mixing {
@@ -137,9 +155,36 @@ html, body {
 }
 
 @keyframes shake {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(3deg); }
-  50% { transform: rotate(0deg); }
-  75% { transform: rotate(-3deg); }
-  100% { transform: rotate(0deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(3deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Speaker focus logic: enlarge and brighten active speaker */
+#character-container img.speaking {
+  transform: scale(1.15);
+  filter: brightness(1.2) contrast(1.05);
+}
+
+/* Dim non-speaking characters */
+#character-container img.dimmed {
+  opacity: 0.6;
+  filter: grayscale(20%);
+}
+
+/* Patron filter: unify tone relative to Lexi */
+#character-container img.patron {
+  filter: hue-rotate(-10deg) saturate(0.9) brightness(0.95);
 }
