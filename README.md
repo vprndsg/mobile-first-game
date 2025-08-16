@@ -13,3 +13,7 @@ live-server
 
 ## Contributing
 PRs welcome! Feel free to replace the placeholder art in /assets.
+
+## Legendary Bar Game
+
+A new experimental bar management simulation has been integrated into this repository. Explore `bar-legendary.html` for the latest code.
